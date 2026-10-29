@@ -39,10 +39,11 @@ const F = {
   "noter-02":["Kutna zofa pod lesenimi gredami","noter"],
   "noter-03":["Opremljena kuhinja","noter"],
   "hodnik-kisa":["Kurilni kot s pečjo na drva in pogledom v sobo","noter"],
-  "noter-10":["Predel za sedenje z ravnim televizorjem","noter"],
+  "noter-10":["Predel za sedenje z ravnim televizorjem in pogradom","noter"],
   "soba-main":["Soba s tremi posteljami","noter"],
   "soba-otroci":["Soba z dvema nadstavnima postelama","noter"],
-  "soba-kisa":["Kot s štedilnikom na drva","noter"],
+  "soba-kisa":["Kaminski kot s pečjo na drva in jedilnico","noter"],
+  "kopalnica-70":["Kopalnica z umivalnikom, zloženimi brisačami in leseno polico","noter"],
   "miza":["Pogrnjena miza pod leseno pergolo","izkus"],
   "izkus-01":["Domača pogača iz lastne peči","izkus"],
   "vrt-pregled":["Vrt s pergolo, jacuzzijem in dvema ležalnikoma","izkus"],
@@ -79,12 +80,21 @@ const HISE = {
     lede: "Prenovljena hiša z dvema samostojnima apartmajema. Skupen ograjen vrt s pergolo, " +
           "letno kuhinjo in jacuzzijem; do naravnega kopališča na Kolpi je deset minut hoje.",
     fakti: [["2", "samostojni enoti"], ["7 + 5", "oseb"], ["10 min", "hoje do reke"], ["10 / 10", "8 mnenj"]],
-    enoti: [["Apartma za 7 oseb", "7 ležišč v dveh spalnicah · lastna terasa"],
-            ["Studio za 5 oseb", "nadstavna postelja in raztegljiv kavč · primerni za štiri do pet oseb"]],
+    enoti: [["Apartma za 7 oseb — zgornji del", "7 ležišč v dveh spalnicah · dnevni del s kaminskim kotom · kopalnica · lastna terasa"],
+            ["Studio za 5 oseb — spodnji del", "raztegljiv kavč in pograd · opremljena kuhinja · primerni za štiri do pet oseb"]],
     opreme: ["Brezplačen WiFi", "Brezplačno parkirišče", "Klimatska naprava", "Štedilnik na drva",
              "Popolnoma opremljena kuhinja", "Jacuzzi na vrtu", "Ograjen vrt in travnik",
              "Ljubljenčki ob predhodni najavi"],
-    velika: "noter-01", smini: ["soba-main", "soba-otroci", "hodnik-kisa", "pergola-vrt"]
+    /* Fotografije so razdeljene po enotah tako, kot jih je potrdil lastnik:
+       ZGORNJI apartma (7 oseb) = dve spalnici in kaminski kot s pečjo na drva;
+       SPODNJI studio (5 oseb) = en odprt prostor z raztegljivim kavčem, pogradom
+       in kuhinjo. Nobena fotografija ne sme stati v obeh blokih. */
+    velika: "soba-kisa",
+    smini: ["soba-main", "soba-otroci", "hodnik-kisa"],
+    enotaVelika: { "Apartma za 7 oseb — zgornji del": "soba-kisa",
+                   "Studio za 5 oseb — spodnji del": "noter-10" },
+    enotaSmini: { "Apartma za 7 oseb — zgornji del": ["soba-main","soba-otroci","hodnik-kisa","kopalnica-70"],
+                   "Studio za 5 oseb — spodnji del": ["noter-01","noter-02","noter-03","terasa-studio"] }
   },
   "30b": {
     id: "30b", pogled: "h30b", naslov: "Griblje 30 b", naslovFull: "Griblje 30 b, SI-8332 Gradac",
@@ -178,10 +188,10 @@ function vDomov() {
     </section>
     <aside class="enote" aria-label="Apartmaji v dveh hišah">
       ${skupina(h70,
-        karta("noter-01", "Apartma za 7 oseb", "7 ležišč · dve spalnici · lastna terasa",
-              "Odprt dnevni prostor s kuhinjo in kurilnim kotom s pečjo na drva.", "h70") +
-        karta("terasa-studio", "Studio za 5 oseb", "štiri do pet oseb · nadstavna postelja",
-              "Pokrita terasa z jedilno mizo in kotom za sprostitev.", "h70"))}
+        karta("soba-kisa", "Apartma za 7 oseb — zgornji del", "7 ležišč · dve spalnici · kopalnica",
+              "Dve spalnici in dnevni del s kaminskim kotom ter pečjo na drva.", "h70") +
+        karta("noter-10", "Studio za 5 oseb — spodnji del", "raztegljiv kavč in pograd · kuhinja",
+              "Odprt prostor z raztegljivim kavčem, pogradom in opremljeno kuhinjo.", "h70"))}
       ${skupina(h30,
         karta("zunanjost-30b", "Dva apartmaja", "nadstrešena terasa z jacuzzijem",
               "Kuhinja s pečico, kopalnica s pralnim strojem, travnik z nogometnimi vrati.", "h30b"))}
@@ -192,21 +202,37 @@ function vDomov() {
 /* ---------------- HIŠA ---------------- */
 function vHisa(kljuc) {
   const h = HISE[kljuc], druga = HISE[kljuc === "70" ? "30b" : "70"];
+  /* Hiša z dvema enotama prikaže vsako enoto z lastno glavno fotografijo in
+     lastnimi sličicami — sicer bi gledalec zamenjal stanovanje z drugim. */
+  const enoteBlok = h.enotaSmini
+    ? `<div class="enote-foto">${h.enoti.map(e => {
+        const glavna = h.enotaVelika[e[0]] || h.velika;
+        const male = (h.enotaSmini[e[0]] || []).map(s =>
+          `<button data-foto="${s}" aria-label="${alt(s)}">${img(s)}</button>`).join("");
+        return `<div class="enota-foto-blok">
+          <p class="enota-foto-naslov">${e[0]}</p>
+          <button class="glavna-btn" data-foto="${glavna}" aria-label="Odpri fotografijo: ${alt(glavna)}">
+            <img src="assets/${glavna}.webp" alt="${alt(glavna)}" decoding="async" fetchpriority="high">
+          </button>
+          <div class="smini">${male}</div>
+        </div>`;
+      }).join("")}</div>`
+    : `<section class="gal-loc">
+         <button class="glavna-btn" data-foto="${h.velika}" aria-label="Odpri fotografijo: ${alt(h.velika)}">
+           <img src="assets/${h.velika}.webp" alt="${alt(h.velika)}" decoding="async" fetchpriority="high">
+         </button>
+         <div class="smini">
+           ${h.smini.map(s => `<button data-foto="${s}" aria-label="${alt(s)}">${img(s)}</button>`).join("")}
+         </div>
+       </section>`;
   return `
   <div class="view lok">
-    <section class="gal-loc">
-      <button class="glavna-btn" data-foto="${h.velika}" aria-label="Odpri fotografijo: ${alt(h.velika)}">
-        <img src="assets/${h.velika}.webp" alt="${alt(h.velika)}" decoding="async">
-      </button>
-      <div class="smini">
-        ${h.smini.map(s => `<button data-foto="${s}" aria-label="${alt(s)}">${img(s)}</button>`).join("")}
-      </div>
-    </section>
+    ${enoteBlok}
     <section class="lok-info">
       <p class="eyebrow">Nastanitev · Griblje, Bela krajina</p>
       <h2 class="h2">${h.naslov}</h2>
       <p class="naslov">${IK.pin}<span>${h.naslovFull}</span>
-        <a class="btn btn-ghost majhen" href="${h.map}" target="_blank" rel="noopener">Zemljevid</a></p>
+        <a class="btn btn-ghost majhen" href="${h.map}" target="_blank" rel="noopener noreferrer">Zemljevid</a></p>
       <p class="lede">${h.lede}</p>
       <div class="fakti">${h.fakti.map(f => `<div class="fakt"><b>${f[0]}</b><span>${f[1]}</span></div>`).join("")}</div>
       <div class="enote-info">${h.enoti.map(e => `<div class="enota"><b>${e[0]}</b><span>${e[1]}</span></div>`).join("")}</div>
@@ -230,7 +256,7 @@ function vReka() {
   return `
   <div class="view reka">
     <button class="stek" data-foto="reka-07" data-list="reka" aria-label="Odpri fotografije reke Kolpe">
-      <img src="assets/reka-07.webp" alt="${alt("reka-07")}" decoding="async">
+      <img src="assets/reka-07.webp" alt="${alt("reka-07")}" decoding="async" fetchpriority="high">
       <figcaption>${alt("reka-07")} — Kolpa v Gribljah</figcaption>
     </button>
     <section class="lok-info">
@@ -327,7 +353,7 @@ function vTermini() {
           <span class="stik-b"><i>Telefon</i><b>${PODATKI.telPrikaz}</b></span></a>
         <a class="stik-a" href="${mailto("povpraševanje po terminu")}"><span class="ico">${IK.pismo}</span>
           <span class="stik-b"><i>E-pošta</i><b>${PODATKI.mail}</b></span></a>
-        <a class="stik-a" href="${PODATKI.booking}" target="_blank" rel="noopener"><span class="ico">${IK.kljuc}</span>
+        <a class="stik-a" href="${PODATKI.booking}" target="_blank" rel="noopener noreferrer"><span class="ico">${IK.kljuc}</span>
           <span class="stik-b"><i>Ali rezervirajte na Bookingu</i><b>Griblje 70 · apartma in studio</b></span></a>
       </div>
       <div class="cta">
@@ -580,12 +606,14 @@ document.addEventListener("click", e => {
   if (e.target.closest("[data-vec]")) { odpriFoto(mrezaSeznam, 0); return; }
   const foto = e.target.closest("[data-foto]");
   if (foto) {
-    const zajeta = foto.closest(".mreza") || foto.closest(".gal-loc");
+    const zajeta = foto.closest(".mreza") || foto.closest(".gal-loc") || foto.closest(".enota-foto-blok");
     if (zajeta?.id === "mreza") {
       /* Seznam vzamemo iz celotne skupine, ne iz DOM: na majhnih zaslonih mreža
          pokaže le del fotografij, v oknu pa morajo biti vse na voljo. */
       odpriFoto(mrezaSeznam, mrezaSeznam.indexOf(foto.dataset.foto));
     } else if (zajeta) {
+      /* Pri dveh enotah v hiši bralec brska le znotraj svojega stanovanja:
+         seznam vzamemo iz istega bloka, ne iz celotne strani. */
       const s = [...zajeta.querySelectorAll("[data-foto]")].map(b => b.dataset.foto);
       odpriFoto(s, s.indexOf(foto.dataset.foto));
     } else if (foto.dataset.list) {
